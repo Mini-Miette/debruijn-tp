@@ -36,7 +36,7 @@ __email__ = "laura.xenard@protonmail.com"
 __status__ = "Developpement"
 
 
-parse = False
+parse = True
 
 
 def isfile(path):
@@ -83,22 +83,11 @@ def read_fastq(fastq_file):
             line = next(f)
             line = next(f)
 
-# =============================================================================
-#         line = f.readline()
-#         while line != '':
-#             print(line)
-#             line = f.readline()
-# =============================================================================
-
-
-# =============================================================================
-#             yield f.next()
-#             f.next()
-# =============================================================================
-
 
 def cut_kmer(read, kmer_size):
-    pass
+
+    for i in range(len(read)-kmer_size+1):
+        yield read[i:(i+kmer_size)]
 
 
 def build_kmer_dict(fastq_file, kmer_size):
@@ -212,10 +201,15 @@ def main():
         output_file = ''
         graph_file = ''
 
-    seq_gen = read_fastq(input_file)
-    for seq in seq_gen:
-        print(type(seq))
-        print(seq)
+
+# =============================================================================
+#     seq_gen = read_fastq(input_file)
+#     for seq in seq_gen:
+#
+#         print(type(seq))
+#         print(seq)
+# =============================================================================
+
     # Fonctions de dessin du graphe
     # A decommenter si vous souhaitez visualiser un petit
     # graphe
