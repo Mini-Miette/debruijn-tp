@@ -91,7 +91,21 @@ def cut_kmer(read, kmer_size):
 
 
 def build_kmer_dict(fastq_file, kmer_size):
-    pass
+    """
+    Retourne un dictionnaire ayant pour clé les k-mers et pour valeur le nombre 
+    d’occurrence de ce k-mer.
+    """
+
+    fastq_reader = read_fastq(fastq_file)
+    kmer_dict = dict()
+    for read in fastq_reader:
+        kmer_reader = cut_kmer(read, kmer_size)
+        for kmer in kmer_reader:
+            if kmer in kmer_dict:
+                kmer_dict[kmer] += 1
+            else:
+                kmer_dict[kmer] = 1
+    return kmer_dict
 
 
 def build_graph(kmer_dict):
