@@ -109,7 +109,13 @@ def build_kmer_dict(fastq_file, kmer_size):
 
 
 def build_graph(kmer_dict):
-    pass
+
+    graph = nx.DiGraph()
+    for key, val in kmer_dict.items():
+        n1 = key[:-1]  # Prefix node.
+        n2 = key[1:]  # Suffix node.
+        graph.add_edge(n1, n2, weight=val)
+    return graph
 
 
 def remove_paths(graph, path_list, delete_entry_node, delete_sink_node):
