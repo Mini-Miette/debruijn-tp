@@ -205,7 +205,11 @@ def build_path(path):
 
 
 def save_contigs(contigs_list, output_file):
-    pass
+
+    with open(output_file, 'w') as f:
+        for i, contig in enumerate(contigs_list):
+            f.write(f'>contig_{i} len={contig[1]}\n')
+            f.write(f'{fill(contig[0])}\n')
 
 
 def fill(text, width=80):
@@ -257,41 +261,23 @@ def main():
         output_file = args.output_file
         graph_file = args.graphimg_file
     else:
-        input_file = '/home/sdv/m2bi/lxenard/Documents/Omiques/Assemblage_metagenomique/debruijn-tp/data/eva71_two_reads.fq'
-        kmer_size = 5
-        output_file = ''
+        input_file = '/home/sdv/m2bi/lxenard/Documents/Omiques/Assemblage_metagenomique/debruijn-tp/data/eva71_hundred_reads.fq'
+        kmer_size = 22
+        output_file = '/home/sdv/m2bi/lxenard/Documents/Omiques/Assemblage_metagenomique/debruijn-tp/output/eva71_hundred_reads_22-mer.txt'
         graph_file = 'graph.png'
 
-# =============================================================================
-#     kmer_dict = build_kmer_dict(input_file, kmer_size)
-#     graph = build_graph(kmer_dict)
-#     if graph_file:
-#         draw_graph(graph, graph_file)
-# =============================================================================
+    kmer_dict = build_kmer_dict(input_file, kmer_size)
+    # print(kmer_dict)
+    graph = build_graph(kmer_dict)
+    sources = get_starting_nodes(graph)
+    print(len(sources))
+    sinks = get_sink_nodes(graph)
+    print(len(sinks))
+    contigs = get_contigs(graph, sources, sinks)
+    save_contigs(contigs, output_file)
 
-# =============================================================================
-#     graph = nx.DiGraph()
-#     graph.add_edges_from([("TC", "CA"), ("AC", "CA"), ("CA", "AG"),
-#                          ("AG", "GC"), ("GC", "CG"), ("CG", "GA"), ("GA", "AT"), ("GA", "AA")])
-#     contig_list = get_contigs(graph, ["TC", "AC"], ["AT", "AA"])
-#     print(contig_list)
-#     results = ["TCAGCGAT", "TCAGCGAA", "ACAGCGAT", "ACAGCGAA"]
-# =============================================================================
-
-# =============================================================================
-#     graph = nx.DiGraph()
-#     graph.add_edges_from([("TC", "CA"), ("AC", "CA"), ("CA", "AG"),
-#                          ("AG", "GC"), ("GC", "CG"), ("CG", "GA"), ("GA", "AT"), ("GA", "AA")])
-#     contig_list = get_contigs(graph, ["TC", "AC"], ["AT", "AA"])
-#     results = ["TCAGCGAT", "TCAGCGAA", "ACAGCGAT", "ACAGCGAA"]
-#
-#     print(contig_list)
-#
-#     assert len(contig_list) == 4
-#     for contig in contig_list:
-#         assert contig[0] in results
-#         assert contig[1] == 8
-# =============================================================================
+    if graph_file:
+        draw_graph(graph, graph_file)
 
     # Fonctions de dessin du graphe
     # A decommenter si vous souhaitez visualiser un petit
