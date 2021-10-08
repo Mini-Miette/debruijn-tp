@@ -133,7 +133,8 @@ def select_best_path(graph, path_list, path_length, weight_avg_list,
 
 
 def path_average_weight(graph, path):
-    pass
+
+    print(graph.edges.data(path))
 
 
 def solve_bubble(graph, ancestor_node, descendant_node):
@@ -184,7 +185,10 @@ def get_contigs(graph, starting_nodes, ending_nodes):
     for start, end in itertools.product(starting_nodes, ending_nodes):
         if nx.has_path(graph, start, end):
             simple_path_reader = nx.all_simple_paths(graph, start, end)
+
             for path in simple_path_reader:
+                print(path)
+                print(graph.edges.data(path))
                 contig = build_path(path)
                 contig_list.append((contig, len(contig)))
     return contig_list
@@ -269,15 +273,20 @@ def main():
     kmer_dict = build_kmer_dict(input_file, kmer_size)
     # print(kmer_dict)
     graph = build_graph(kmer_dict)
+
+    #print(graph.edges.data(path, 'weight'))
+
     sources = get_starting_nodes(graph)
     print(len(sources))
     sinks = get_sink_nodes(graph)
     print(len(sinks))
     contigs = get_contigs(graph, sources, sinks)
-    save_contigs(contigs, output_file)
+    #save_contigs(contigs, output_file)
 
-    if graph_file:
-        draw_graph(graph, graph_file)
+# =============================================================================
+#     if graph_file:
+#         draw_graph(graph, graph_file)
+# =============================================================================
 
     # Fonctions de dessin du graphe
     # A decommenter si vous souhaitez visualiser un petit
