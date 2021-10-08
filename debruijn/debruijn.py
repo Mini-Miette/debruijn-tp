@@ -13,6 +13,7 @@
 
 """Perform assembly based on debruijn graph."""
 
+import itertools
 from operator import itemgetter
 import matplotlib.pyplot as plt
 import pickle
@@ -36,7 +37,7 @@ __email__ = "laura.xenard@protonmail.com"
 __status__ = "Developpement"
 
 
-parse = True
+parse = False
 
 
 def isfile(path):
@@ -152,15 +153,55 @@ def solve_out_tips(graph, ending_nodes):
 
 
 def get_starting_nodes(graph):
-    pass
+    """
+    Retourne une liste de noeuds d’entrée i.e ceux qui n'ont pas de 
+    prédecesseurs.
+    """
+
+    starting_nodes = [node for node in graph.nodes
+                      if not list(graph.predecessors(node))]
+    return starting_nodes
 
 
 def get_sink_nodes(graph):
-    pass
+    """
+    Retourne une liste de noeuds de sortie i.e ceux qui n'ont pas de 
+    successeurs.
+    """
+
+    sink_nodes = [node for node in graph.nodes
+                  if not list(graph.successors(node))]
+    return sink_nodes
 
 
 def get_contigs(graph, starting_nodes, ending_nodes):
-    pass
+    """
+    Retourne une liste de tuple(contig, longueur du contig).
+    Un chemin entre un nœud d’entrée et un nœud de sortie 
+    correspond à une séquence contiguë (contig).
+    """
+    contig_list = []
+    for start, end in itertools.product(starting_nodes, ending_nodes):
+        if nx.has_path(graph, start, end):
+            simple_path_reader = nx.all_simple_paths(graph, start, end)
+            for path in simple_path_reader:
+                contig = build_path(path)
+                contig_list.append((contig, len(contig)))
+    return contig_list
+
+
+def build_path(path):
+    """
+    Build a contig from a list of nodes.
+    """
+
+    path_str = ''
+    for node in path[:-1]:
+        path_str += node[:-1]
+    # For the last node, we only need to add the last letter since the
+    # rest of the kmer was added with the previous node.
+    path_str += path[-1]
+    return path_str
 
 
 def save_contigs(contigs_list, output_file):
@@ -219,15 +260,37 @@ def main():
         input_file = '/home/sdv/m2bi/lxenard/Documents/Omiques/Assemblage_metagenomique/debruijn-tp/data/eva71_two_reads.fq'
         kmer_size = 5
         output_file = ''
-        graph_file = ''
-
+        graph_file = 'graph.png'
 
 # =============================================================================
-#     seq_gen = read_fastq(input_file)
-#     for seq in seq_gen:
+#     kmer_dict = build_kmer_dict(input_file, kmer_size)
+#     graph = build_graph(kmer_dict)
+#     if graph_file:
+#         draw_graph(graph, graph_file)
+# =============================================================================
+
+# =============================================================================
+#     graph = nx.DiGraph()
+#     graph.add_edges_from([("TC", "CA"), ("AC", "CA"), ("CA", "AG"),
+#                          ("AG", "GC"), ("GC", "CG"), ("CG", "GA"), ("GA", "AT"), ("GA", "AA")])
+#     contig_list = get_contigs(graph, ["TC", "AC"], ["AT", "AA"])
+#     print(contig_list)
+#     results = ["TCAGCGAT", "TCAGCGAA", "ACAGCGAT", "ACAGCGAA"]
+# =============================================================================
+
+# =============================================================================
+#     graph = nx.DiGraph()
+#     graph.add_edges_from([("TC", "CA"), ("AC", "CA"), ("CA", "AG"),
+#                          ("AG", "GC"), ("GC", "CG"), ("CG", "GA"), ("GA", "AT"), ("GA", "AA")])
+#     contig_list = get_contigs(graph, ["TC", "AC"], ["AT", "AA"])
+#     results = ["TCAGCGAT", "TCAGCGAA", "ACAGCGAT", "ACAGCGAA"]
 #
-#         print(type(seq))
-#         print(seq)
+#     print(contig_list)
+#
+#     assert len(contig_list) == 4
+#     for contig in contig_list:
+#         assert contig[0] in results
+#         assert contig[1] == 8
 # =============================================================================
 
     # Fonctions de dessin du graphe
