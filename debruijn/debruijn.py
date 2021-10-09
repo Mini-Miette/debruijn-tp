@@ -223,19 +223,58 @@ def solve_entry_tips(graph, starting_nodes):
 
     tip = False
 
-    for start, node in mit.product(starting_nodes, graph.nodes):
-        path_list = list(nx.all_simple_paths(graph, start, node))
-        if len(path_list) > 1:
-            path_length = [len(path) for path in path_list]
+# =============================================================================
+#     path_dict = {}  # end node as key, path as value
+#
+#     for start, node in it.product(starting_nodes, graph.nodes):
+#         print(f'start, node: {start}, {node}')
+#         path_list = list(nx.all_simple_paths(graph, start, node))
+#         if len(path_list) > 0:
+#             if node in path_dict:
+#                 path_dict[node].append(path_list)
+#             else:
+#                 path_dict[node] = path_list
+#
+#     print(path_dict)
+# =============================================================================
+
+    for node in graph.nodes:
+        print(f'node: {node}')
+        all_paths = []
+        for start in starting_nodes:
+            path_list = list(nx.all_simple_paths(graph, start, node))
+            if len(path_list) > 0:
+                all_paths.append(*path_list)
+
+        if len(all_paths) > 1:
+            path_length = [len(path) for path in all_paths]
             weight_avg_list = [path_average_weight(graph, path)
-                               for path in path_list]
-            graph = select_best_path(graph, path_list, path_length,
-                                     weight_avg_list, delete_entry_node=True)
+                                for path in all_paths]
+            graph = select_best_path(graph, all_paths, path_length,
+                                      weight_avg_list, delete_entry_node=True)
             tip = True
             break
 
-    if tip:
-        graph = solve_entry_tips(graph, starting_nodes)
+
+
+
+        #print(all_paths)
+
+
+# =============================================================================
+#         print(f'path_list: {path_list}')
+#         if len(path_list) > 1:
+#             path_length = [len(path) for path in path_list]
+#             weight_avg_list = [path_average_weight(graph, path)
+#                                for path in path_list]
+#             graph = select_best_path(graph, path_list, path_length,
+#                                      weight_avg_list, delete_entry_node=True)
+#             tip = True
+#             break
+# =============================================================================
+
+        if tip:
+            graph = solve_entry_tips(graph, starting_nodes)
 
     return graph
 
@@ -398,44 +437,27 @@ def main():
         output_file = 'G:/RAID/Fac/M2_BI/Omiques/Assemblage - Génomique/debruijn-tp/output/eva71_hundred_reads_22-mer.txt'
         graph_file = 'graph.png'
 
-    graph_1 = nx.DiGraph()
-    graph_2 = nx.DiGraph()
-    graph_3 = nx.DiGraph()
-    graph_4 = nx.DiGraph()
-    graph_1.add_edges_from([(1, 2), (3, 2), (2, 4), (4, 5), (5, 6), (5, 7)])
-    graph_2.add_edges_from([(1, 2), (3, 2), (2, 4), (4, 5), (5, 6), (5, 7)])
-    graph_3.add_edges_from([(1, 2), (3, 2), (2, 4), (4, 5), (5, 6), (5, 7)])
-    graph_4.add_edges_from([(1, 2), (3, 2), (2, 4), (4, 5), (5, 6), (5, 7)])
 
-    print("AVANT")
+    graph_1 = nx.DiGraph()
+    graph_1.add_weighted_edges_from([(1, 2, 10), (3, 2, 2), (2, 4, 15), (4, 5, 15)])
+    graph_1 = solve_entry_tips(graph_1, [1, 3])
+
     print(graph_1.nodes)
     print(graph_1.edges)
 
+    assert (3, 2) not in graph_1.edges()
+    assert (1, 2) in graph_1.edges()
+    graph_2 = nx.DiGraph()
+    graph_2.add_weighted_edges_from([(1, 2, 2), (6, 3, 2), (3, 2, 2),
+                                     (2, 4, 15), (4, 5, 15)])
+    graph_2 = solve_entry_tips(graph_2, [1, 6])
+    assert (1, 2) not in graph_2.edges()
+    assert (6, 3) in graph_2.edges()
+    assert (3, 2) in graph_2.edges()
 
 
-    graph_1 = remove_paths(graph_1, [(1,2)], True, False)
-# =============================================================================
-#     graph_2 = remove_paths(graph_2, [(5,7)], False, True)
-#     graph_3 = remove_paths(graph_3, [(2,4,5)], False, False)
-#     graph_4 = remove_paths(graph_4, [(2,4,5)], True, True)
-# =============================================================================
-
-    print("APRES")
-    print(graph_1.nodes)
 
 
-# =============================================================================
-#     assert (1,2) not in graph_1.edges()
-#     assert (3,2) in graph_1.edges()
-#     assert (5,7) not in graph_2.edges()
-#     assert (5,6) in graph_2.edges()
-#     assert 4 not in graph_3.nodes()
-#     assert (2,4) not in graph_4.edges()
-#     assert (4, 5) not in graph_4.edges()
-#     assert 2 not in graph_4.nodes()
-#     assert 4 not in graph_4.nodes()
-#     assert 5 not in graph_4.nodes()
-# =============================================================================
 
 # =============================================================================
 #     kmer_dict = build_kmer_dict(input_file, kmer_size)
