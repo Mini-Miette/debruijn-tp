@@ -13,7 +13,8 @@
 
 """Perform assembly based on debruijn graph."""
 
-import itertools
+import itertools as it
+import more_itertools as mit
 from operator import itemgetter
 import matplotlib.pyplot as plt
 import pickle
@@ -93,7 +94,7 @@ def cut_kmer(read, kmer_size):
 
 def build_kmer_dict(fastq_file, kmer_size):
     """
-    Retourne un dictionnaire ayant pour clé les k-mers et pour valeur le nombre 
+    Retourne un dictionnaire ayant pour clé les k-mers et pour valeur le nombre
     d’occurrence de ce k-mer.
     """
 
@@ -120,7 +121,20 @@ def build_graph(kmer_dict):
 
 
 def remove_paths(graph, path_list, delete_entry_node, delete_sink_node):
-    pass
+
+    for path in path_list:
+        for node in path[1:-1]:
+            graph.remove_node(node)
+        if delete_entry_node:
+            graph.remove_node(path[0])
+        if delete_sink_node:
+            graph.remove_node(path[-1])
+
+    return graph
+
+
+
+
 
 
 def std(data):
@@ -134,7 +148,10 @@ def select_best_path(graph, path_list, path_length, weight_avg_list,
 
 def path_average_weight(graph, path):
 
-    print(graph.edges.data(path))
+    path_weight = 0
+    for n1, n2 in mit.pairwise(path):
+        path_weight += graph.edges[n1, n2]['weight']
+    return path_weight / (len(path) - 1)
 
 
 def solve_bubble(graph, ancestor_node, descendant_node):
@@ -155,7 +172,7 @@ def solve_out_tips(graph, ending_nodes):
 
 def get_starting_nodes(graph):
     """
-    Retourne une liste de noeuds d’entrée i.e ceux qui n'ont pas de 
+    Retourne une liste de noeuds d’entrée i.e ceux qui n'ont pas de
     prédecesseurs.
     """
 
@@ -166,7 +183,7 @@ def get_starting_nodes(graph):
 
 def get_sink_nodes(graph):
     """
-    Retourne une liste de noeuds de sortie i.e ceux qui n'ont pas de 
+    Retourne une liste de noeuds de sortie i.e ceux qui n'ont pas de
     successeurs.
     """
 
@@ -178,17 +195,14 @@ def get_sink_nodes(graph):
 def get_contigs(graph, starting_nodes, ending_nodes):
     """
     Retourne une liste de tuple(contig, longueur du contig).
-    Un chemin entre un nœud d’entrée et un nœud de sortie 
+    Un chemin entre un nœud d’entrée et un nœud de sortie
     correspond à une séquence contiguë (contig).
     """
     contig_list = []
-    for start, end in itertools.product(starting_nodes, ending_nodes):
+    for start, end in it.product(starting_nodes, ending_nodes):
         if nx.has_path(graph, start, end):
             simple_path_reader = nx.all_simple_paths(graph, start, end)
-
             for path in simple_path_reader:
-                print(path)
-                print(graph.edges.data(path))
                 contig = build_path(path)
                 contig_list.append((contig, len(contig)))
     return contig_list
@@ -265,23 +279,64 @@ def main():
         output_file = args.output_file
         graph_file = args.graphimg_file
     else:
-        input_file = '/home/sdv/m2bi/lxenard/Documents/Omiques/Assemblage_metagenomique/debruijn-tp/data/eva71_hundred_reads.fq'
+        input_file = 'G:/RAID/Fac/M2_BI/Omiques/Assemblage - Génomique/debruijn-tp/data/eva71_hundred_reads.fq'
         kmer_size = 22
-        output_file = '/home/sdv/m2bi/lxenard/Documents/Omiques/Assemblage_metagenomique/debruijn-tp/output/eva71_hundred_reads_22-mer.txt'
+        output_file = 'G:/RAID/Fac/M2_BI/Omiques/Assemblage - Génomique/debruijn-tp/output/eva71_hundred_reads_22-mer.txt'
         graph_file = 'graph.png'
 
-    kmer_dict = build_kmer_dict(input_file, kmer_size)
-    # print(kmer_dict)
-    graph = build_graph(kmer_dict)
+    graph_1 = nx.DiGraph()
+    graph_2 = nx.DiGraph()
+    graph_3 = nx.DiGraph()
+    graph_4 = nx.DiGraph()
+    graph_1.add_edges_from([(1, 2), (3, 2), (2, 4), (4, 5), (5, 6), (5, 7)])
+    graph_2.add_edges_from([(1, 2), (3, 2), (2, 4), (4, 5), (5, 6), (5, 7)])
+    graph_3.add_edges_from([(1, 2), (3, 2), (2, 4), (4, 5), (5, 6), (5, 7)])
+    graph_4.add_edges_from([(1, 2), (3, 2), (2, 4), (4, 5), (5, 6), (5, 7)])
 
-    #print(graph.edges.data(path, 'weight'))
+    print("AVANT")
+    print(graph_1.nodes)
+    print(graph_1.edges)
 
-    sources = get_starting_nodes(graph)
-    print(len(sources))
-    sinks = get_sink_nodes(graph)
-    print(len(sinks))
-    contigs = get_contigs(graph, sources, sinks)
-    #save_contigs(contigs, output_file)
+
+
+    graph_1 = remove_paths(graph_1, [(1,2)], True, False)
+# =============================================================================
+#     graph_2 = remove_paths(graph_2, [(5,7)], False, True)
+#     graph_3 = remove_paths(graph_3, [(2,4,5)], False, False)
+#     graph_4 = remove_paths(graph_4, [(2,4,5)], True, True)
+# =============================================================================
+
+    print("APRES")
+    print(graph_1.nodes)
+
+
+# =============================================================================
+#     assert (1,2) not in graph_1.edges()
+#     assert (3,2) in graph_1.edges()
+#     assert (5,7) not in graph_2.edges()
+#     assert (5,6) in graph_2.edges()
+#     assert 4 not in graph_3.nodes()
+#     assert (2,4) not in graph_4.edges()
+#     assert (4, 5) not in graph_4.edges()
+#     assert 2 not in graph_4.nodes()
+#     assert 4 not in graph_4.nodes()
+#     assert 5 not in graph_4.nodes()
+# =============================================================================
+
+# =============================================================================
+#     kmer_dict = build_kmer_dict(input_file, kmer_size)
+#     # print(kmer_dict)
+#     graph = build_graph(kmer_dict)
+#
+#     #print(graph.edges.data(path, 'weight'))
+#
+#     sources = get_starting_nodes(graph)
+#     print(len(sources))
+#     sinks = get_sink_nodes(graph)
+#     print(len(sinks))
+#     contigs = get_contigs(graph, sources, sinks)
+#     #save_contigs(contigs, output_file)
+# =============================================================================
 
 # =============================================================================
 #     if graph_file:
