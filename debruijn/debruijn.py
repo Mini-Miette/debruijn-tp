@@ -208,11 +208,80 @@ def simplify_bubbles(graph):
 
 
 def solve_entry_tips(graph, starting_nodes):
-    pass
+
+# =============================================================================
+#     # Finding all entry tips.
+#     all_entry_tips = []
+#     for start_node in starting_nodes:
+#         current_node = start_node
+#         successors = list(graph.successors(current_node))
+#         while len(successors) == 1:
+#             current_node = successors[0]
+#             successors = list(graph.successors(current_node))
+#         all_entry_tips.append((start_node, current_node))
+# =============================================================================
+
+    tip = False
+
+    for start, node in mit.product(starting_nodes, graph.nodes):
+        path_list = list(nx.all_simple_paths(graph, start, node))
+        if len(path_list) > 1:
+            path_length = [len(path) for path in path_list]
+            weight_avg_list = [path_average_weight(graph, path)
+                               for path in path_list]
+            graph = select_best_path(graph, path_list, path_length,
+                                     weight_avg_list, delete_entry_node=True)
+            tip = True
+            break
+
+    if tip:
+        graph = solve_entry_tips(graph, starting_nodes)
+
+    return graph
+
+
+# =============================================================================
+#     Pour chaque noeud
+#         pour chaque start
+#             tester si path entre start et noeud
+#             si plusieurs tel chemin
+#                 garder le meilleur (select_best_path)
+#                 tip = True
+#                 break
+# =============================================================================
+
+
+
+# =============================================================================
+#     Pour chaque start
+#         on regarde son successeur
+#         si seulement 1 out_deg
+#             on passe à son successeur
+#         sinon on s'arrête et on stocke le noeud d'arrêt dans une liste
+#
+#
+#     for node in graph.nodes:
+#         node_predecessors = list(graph.predecessors(node))
+#         node_starting_predecessors = [node for node in node_predecessors
+#                                       if node in starting_nodes]
+#         if len(node_starting_predecessors) > 1:
+#             for start_node in node_starting_predecessors:
+#                 simple_path_reader = nx.shortest_simple_paths(graph,
+#                                                               start_node,
+#                                                               node)
+#
+#     select_best_path(graph, path_list, path_length, weight_avg_list,
+#                      delete_entry_node=False, delete_sink_node=False)
+#
+#
+#     for node in starting_nodes:
+#         node_predecessors = list(graph.predecessors(node))
+#         if len(node_predecessors) > 1:
+# =============================================================================
 
 
 def solve_out_tips(graph, ending_nodes):
-    pass
+    return graph
 
 
 def get_starting_nodes(graph):
