@@ -19,8 +19,9 @@ from operator import itemgetter
 import matplotlib.pyplot as plt
 import pickle
 import networkx as nx
+import numpy as np
 import sys
-import statistics
+import statistics as st
 import os
 import argparse
 import random
@@ -123,27 +124,50 @@ def build_graph(kmer_dict):
 def remove_paths(graph, path_list, delete_entry_node, delete_sink_node):
 
     for path in path_list:
-        for node in path[1:-1]:
-            graph.remove_node(node)
+        graph.remove_nodes_from(path[1:-1])
         if delete_entry_node:
             graph.remove_node(path[0])
         if delete_sink_node:
             graph.remove_node(path[-1])
-
     return graph
 
 
-
-
-
-
 def std(data):
-    pass
+    return st.stdev(data)
 
 
 def select_best_path(graph, path_list, path_length, weight_avg_list,
                      delete_entry_node=False, delete_sink_node=False):
-    pass
+
+    # Finding the best path
+    weight_std = st.stdev(weight_avg_list)
+    check_length = False
+    if weight_std > 0:
+        max_weight = max(weight_avg_list)
+        paths_max_weight = [i for i, j in enumerate(weight_avg_list)
+                            if j == max_weight]
+        if len(paths_max_weight) == 1:
+            best_path = paths_max_weight[0]
+        else:
+            check_length = True
+    if weight_std == 0 or check_length:
+        length_std = st.stdev(path_length)
+        if length_std > 0:
+            max_length = max(path_length)
+            paths_max_length = [i for i, j in enumerate(path_length)
+                                if j == max_length]
+            if len(paths_max_length) == 1:
+                best_path = paths_max_length[0]
+            else:
+                best_path = randint(0, len(path_length) - 1)
+        else:
+             best_path = randint(0, len(path_length) - 1)
+
+    # Deleting the other paths
+    path_list.pop(best_path)
+    graph = remove_paths(graph, path_list, delete_entry_node, delete_sink_node)
+
+    return graph
 
 
 def path_average_weight(graph, path):
@@ -155,7 +179,16 @@ def path_average_weight(graph, path):
 
 
 def solve_bubble(graph, ancestor_node, descendant_node):
-    pass
+
+    simple_path_reader = nx.all_simple_paths(graph, ancestor_node,
+                                             descendant_node)
+    path_list = list(simple_path_reader)
+    path_length = [len(path) for path in path_list]
+    weight_avg_list = [path_average_weight(graph, path) for path in path_list]
+    graph = select_best_path(graph, path_list, path_length, weight_avg_list)
+    return graph
+
+
 
 
 def simplify_bubbles(graph):
