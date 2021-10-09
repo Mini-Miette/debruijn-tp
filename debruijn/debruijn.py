@@ -189,10 +189,22 @@ def solve_bubble(graph, ancestor_node, descendant_node):
     return graph
 
 
-
-
 def simplify_bubbles(graph):
-    pass
+
+    bubble = False
+
+    for node in graph.nodes:
+        node_predecessors = list(graph.predecessors(node))
+        if len(node_predecessors) > 1:
+            for n1, n2 in it.combinations(node_predecessors, r=2):
+                ancestor = nx.lowest_common_ancestor(graph, n1, n2)
+                if ancestor is not None:  # Stopping condition.
+                    bubble = True
+                    break
+    if bubble:  # Recursive call.
+        graph = simplify_bubbles(solve_bubble(graph, ancestor, node))
+
+    return graph
 
 
 def solve_entry_tips(graph, starting_nodes):
