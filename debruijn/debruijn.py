@@ -344,28 +344,30 @@ def solve_entry_tips(graph, starting_nodes):
     tip = False
 
     for node in graph.nodes:
+        if graph.in_degree(node) > 0:  # Current node is not a starting node.
 
-        # Searching for all the simple paths from a starting node to the
-        # current one.
-        all_paths = []
-        for start in starting_nodes:
-            path_list = list(nx.all_simple_paths(graph, start, node))
-            if len(path_list) > 0:
-                all_paths.append(*path_list)
+            # Searching for all the simple paths from a starting node to the
+            # current one.
+            all_paths = []
+            for start in starting_nodes:
+                path_list = list(nx.all_simple_paths(graph, start, node))
+                if len(path_list) > 0:
+                    all_paths += path_list
 
-        # If there's more than one such path, it means there's at least
-        # an entry tip. We have to find the best path to keep.
-        if len(all_paths) > 1:
-            path_length = [len(path) for path in all_paths]
-            weight_avg_list = [path_average_weight(graph, path)
-                               for path in all_paths]
-            graph = select_best_path(graph, all_paths, path_length,
-                                     weight_avg_list, delete_entry_node=True)
-            tip = True
-            break
+            # If there's more than one such path, it means there's at least
+            # an entry tip. We have to find the best path to keep.
+            if len(all_paths) > 1:
+                path_length = [len(path) for path in all_paths]
+                weight_avg_list = [path_average_weight(graph, path)
+                                   for path in all_paths]
+                graph = select_best_path(graph, all_paths, path_length,
+                                         weight_avg_list,
+                                         delete_entry_node=True)
+                tip = True
+                break
 
-        if tip: # Recursive call.
-            graph = solve_entry_tips(graph, starting_nodes)
+            if tip: # Recursive call.
+                graph = solve_entry_tips(graph, starting_nodes)
 
     return graph
 
