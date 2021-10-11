@@ -15,13 +15,13 @@
 
 import itertools as it
 import more_itertools as mit
-from operator import itemgetter
 import matplotlib.pyplot as plt
+from operator import itemgetter
 import pickle
 import networkx as nx
-import numpy as np
 import sys
 import statistics as st
+import time
 import os
 import argparse
 import random
@@ -44,8 +44,17 @@ parse = False
 
 def isfile(path):
     """Check if path is an existing file.
-      :Parameters:
-          path: Path to the file
+
+
+    Args:
+        path (str): Path to the file.
+
+    Raises:
+        argparse: ArgumentTypeError
+
+    Returns:
+        path (str): Path to the file
+
     """
     if not os.path.isfile(path):
         if os.path.isdir(path):
@@ -57,8 +66,11 @@ def isfile(path):
 
 
 def get_arguments():
-    """Retrieves the arguments of the program.
-      Returns: An object that contains the arguments
+    """Retrieve the arguments of the program.
+
+    Returns:
+        Object: An object that contains the arguments
+
     """
     # Parsing arguments
     parser = argparse.ArgumentParser(description=__doc__, usage="{0} -h"
@@ -76,6 +88,16 @@ def get_arguments():
 
 
 def read_fastq(fastq_file):
+    """Read a fasta file.
+
+
+    Args:
+        fastq_file (str): Path of the fasta file
+
+    Yields:
+        str generator: DESCRIPTION.
+
+    """
 
     with open(fastq_file, 'r') as f:
         for line in f:
@@ -198,24 +220,18 @@ def solve_bubble(graph, ancestor_node, descendant_node):
 
 def simplify_bubbles(graph):
 
-    # TODO: je pense qu'il y a un problème ici, probablement une boucle
-    # infinie car le test passe mais ça mouline sans arrêt sur de vraies
-    # données.
-
     bubble = False
 
     for node in graph.nodes:
-        print('simplify_bubbles node:', node)
-
-
-
         if graph.in_degree(node) > 1:
             node_predecessors = list(graph.predecessors(node))
             for n1, n2 in it.combinations(node_predecessors, r=2):
                 ancestor = nx.lowest_common_ancestor(graph, n1, n2)
-                if ancestor is not None:  # Stopping condition.
+                if ancestor is not None:
                     bubble = True
                     break
+        if bubble:
+            break
     if bubble:  # Recursive call.
         graph = simplify_bubbles(solve_bubble(graph, ancestor, node))
 
@@ -227,12 +243,17 @@ def solve_entry_tips(graph, starting_nodes):
     tip = False
 
     for node in graph.nodes:
+
+        # Searching for all the simple paths from a starting node to the
+        # current one.
         all_paths = []
         for start in starting_nodes:
             path_list = list(nx.all_simple_paths(graph, start, node))
             if len(path_list) > 0:
                 all_paths.append(*path_list)
 
+        # If there's more than one such path, it means there's at least
+        # an entry tip. We have to find the best path to keep.
         if len(all_paths) > 1:
             path_length = [len(path) for path in all_paths]
             weight_avg_list = [path_average_weight(graph, path)
@@ -242,44 +263,10 @@ def solve_entry_tips(graph, starting_nodes):
             tip = True
             break
 
-        if tip:
+        if tip: # Recursive call.
             graph = solve_entry_tips(graph, starting_nodes)
 
     return graph
-
-# =============================================================================
-#     tip = False
-#
-#     for n1, n2 in it.combinations(starting_nodes, r=2):
-#         #print(f'n1, n2: {n1}, {n2}')
-#
-#
-#
-#         ancestor = nx.lowest_common_ancestor(graph, n1, n2)
-#         #print(f'\tancestor: {ancestor}')
-#         if ancestor is not None:  # Stopping condition.
-#             tip = True
-#             # Looking for all the paths from ancestor to ending nodes.
-#             all_paths = [*nx.all_simple_paths(graph, ancestor, n1),
-#                          *nx.all_simple_paths(graph, ancestor, n2)]
-#             #print(f'\tall_paths: {all_paths}')
-#             if len(all_paths) > 1:
-#                 path_length = [len(path) for path in all_paths]
-#                 weight_avg_list = [path_average_weight(graph, path)
-#                                    for path in all_paths]
-#                 # Selection of the best path.
-#                 graph = select_best_path(graph, all_paths, path_length,
-#                                          weight_avg_list, delete_sink_node=True)
-#                 #print(f'\tgraph_nodes: {graph.nodes}')
-#                 #print(f'\tgraph_edges: {graph.edges}')
-#             break
-#
-#         # nettoyer les noeuds qui trainent (garder la plus grande composante connexe) ...?
-#         if tip:
-#             graph = solve_out_tips(graph, ending_nodes)
-#
-#     return graph
-# =============================================================================
 
 
 def solve_out_tips(graph, ending_nodes):
@@ -287,27 +274,27 @@ def solve_out_tips(graph, ending_nodes):
     tip = False
 
     for n1, n2 in it.combinations(ending_nodes, r=2):
-        #print(f'n1, n2: {n1}, {n2}')
         ancestor = nx.lowest_common_ancestor(graph, n1, n2)
-        #print(f'\tancestor: {ancestor}')
-        if ancestor is not None:  # Stopping condition.
-            tip = True
-            # Looking for all the paths from ancestor to ending nodes.
+        if ancestor is not None:
+
+            # Searching for all the paths from ancestor to ending nodes.
             all_paths = [*nx.all_simple_paths(graph, ancestor, n1),
                          *nx.all_simple_paths(graph, ancestor, n2)]
-            #print(f'\tall_paths: {all_paths}')
+
+            # If there's more than one such path, it means there's at least
+            # an out tip. We have to find the best path to keep.
             if len(all_paths) > 1:
                 path_length = [len(path) for path in all_paths]
                 weight_avg_list = [path_average_weight(graph, path)
                                    for path in all_paths]
                 # Selection of the best path.
                 graph = select_best_path(graph, all_paths, path_length,
-                                         weight_avg_list, delete_sink_node=True)
-                #print(f'\tgraph_nodes: {graph.nodes}')
-                #print(f'\tgraph_edges: {graph.edges}')
+                                         weight_avg_list,
+                                         delete_sink_node=True)
+            tip = True
             break
 
-        if tip:
+        if tip: # Recursive call.
             graph = solve_out_tips(graph, ending_nodes)
 
     return graph
@@ -349,7 +336,7 @@ def get_contigs(graph, starting_nodes, ending_nodes):
 
 def build_path(path):
     """
-    Build a contig from a list of nodes.
+    Build a string contig from a list of nodes.
     """
 
     path_str = ''
@@ -419,68 +406,47 @@ def main():
         graph_file = args.graphimg_file
     else:
         input_file = 'G:/RAID/Fac/M2_BI/Omiques/Assemblage - Génomique/debruijn-tp/data/eva71_hundred_reads.fq'
+        input_file = 'G:/RAID/Fac/M2_BI/Omiques/Assemblage - Génomique/debruijn-tp/data/eva71_plus_perfect.fq'
         kmer_size = 22
-        output_file = 'G:/RAID/Fac/M2_BI/Omiques/Assemblage - Génomique/debruijn-tp/output/eva71_hundred_reads_22-mer.txt'
+        output_file = 'G:/RAID/Fac/M2_BI/Omiques/Assemblage - Génomique/debruijn-tp/output/eva71_plus_perfect_22-mer.fna'
         graph_file = 'graph.png'
-
-
-# =============================================================================
-#     graph_1 = nx.DiGraph()
-#     graph_1.add_weighted_edges_from([(1, 2, 15), (2, 3, 15), (3, 4, 15), (4, 5, 15), (4, 6, 2)])
-#     graph_1 = solve_out_tips(graph_1, [5, 6])
-#
-#     print(f'Nodes: {graph_1.nodes}')
-#     print(f'Edges: {graph_1.edges}')
-#
-#     assert (4, 6) not in graph_1.edges()
-#     assert (4, 5) in graph_1.edges()
-#     graph_2 = nx.DiGraph()
-#     graph_2.add_weighted_edges_from([(1, 2, 15), (2, 3, 15), (3, 4, 15), (4, 5, 2), (4, 6, 2) , (6, 7, 2)])
-#     graph_2 = solve_out_tips(graph_2, [5, 7])
-#     assert (4, 5) not in graph_2.edges()
-#     assert (6, 7) in graph_2.edges()
-#
-#     print(graph_1.nodes)
-#     print(graph_1.edges)
-# =============================================================================
-
-
 
 
     # Graph construction.
     kmer_dict = build_kmer_dict(input_file, kmer_size)
-    # print(kmer_dict)
     graph = build_graph(kmer_dict)
-    #print(graph.edges.data(path, 'weight'))
     sources = get_starting_nodes(graph)
-    #print(len(sources))
     sinks = get_sink_nodes(graph)
-    #print(len(sinks))
     contigs = get_contigs(graph, sources, sinks)
-    #save_contigs(contigs, output_file)
 
     # Bubble and tips resolution.
-    print('CONNECTED 1:', nx.is_weakly_connected(graph))
+    print('Initial graph:')
+    print(f'\tNb of nodes: {graph.number_of_nodes()}')
+    print(f'\tNb of edges: {graph.number_of_edges()}')
     graph = simplify_bubbles(graph)
-    print('CONNECTED 2:', nx.is_weakly_connected(graph))
+    print('Graph after bubbles simplification:')
+    print(f'\tNb of nodes: {graph.number_of_nodes()}')
+    print(f'\tNb of edges: {graph.number_of_edges()}')
     graph = solve_entry_tips(graph, get_starting_nodes(graph))
-    print('CONNECTED 3:', nx.is_weakly_connected(graph))
+    print('Graph after entry tips removal:')
+    print(f'\tNb of nodes: {graph.number_of_nodes()}')
+    print(f'\tNb of edges: {graph.number_of_edges()}')
     graph = solve_out_tips(graph, get_sink_nodes(graph))
-    print('CONNECTED 4:', nx.is_weakly_connected(graph))
+    print('Graph after out tips removal:')
+    print(f'\tNb of nodes: {graph.number_of_nodes()}')
+    print(f'\tNb of edges: {graph.number_of_edges()}')
 
 
     # Writing the contig.
-    sources = get_starting_nodes(graph)
-    #print(len(sources))
-    sinks = get_sink_nodes(graph)
-    #print(len(sinks))
-    contigs = get_contigs(graph, sources, sinks)
+    # Since some nodes have been deleted, we have to reevaluate the source
+    # and sink nodes.
+    contigs = get_contigs(graph, get_starting_nodes(graph),
+                          get_sink_nodes(graph))
+    # We sort the contigs from longest to shortest.
+    contigs.sort(key=itemgetter(1), reverse=True)
+    print(f'Number of contigs found: {len(contigs)}')
+    print(f'Length of longest contig: {contigs[0][1]}')
     save_contigs(contigs, output_file)
-
-# =============================================================================
-#     if graph_file:
-#         draw_graph(graph, graph_file)
-# =============================================================================
 
     # Fonctions de dessin du graphe
     # A decommenter si vous souhaitez visualiser un petit
@@ -494,4 +460,8 @@ def main():
 
 
 if __name__ == '__main__':
+
+    start_time = time.time()
     main()
+    end_time = time.time() - start_time
+    print(f'Assembly done in {end_time // 60:.0f} min {end_time % 60:.2f} s.')
