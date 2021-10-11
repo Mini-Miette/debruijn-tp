@@ -3,6 +3,16 @@
 Vous trouverez la description complète du TP [ici]( 
 https://docs.google.com/document/d/1P4v3bHbSurD7RXA-ldVwmtNKGvWsnBae51RMGye_KLs/edit?usp=sharing).
 
+## Résultats
+
+Pytest :
+![](/output/ALL_PASSED.png)
+
+Exécution :
+![](/output/Execution.png)
+
+Le fichier eva71_plus_perfect.fq me donne un unique contig de 147 421 résidus. Il n'est donc pas possible d'effectuer un BLAST. Je pense que mon implémentation de la suppression des pointes, a minima, est incorrecte.
+
 ## Introduction
 
 L’objectif de ce TP sera d’assembler le génome de l’entérovirus A71. Ce génome présente l’intérêt d’être très court: 7408 nucléotides, linéaire et non segmenté.
